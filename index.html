@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DOMINATOR - Conquista dos Reinos RPG</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Main 60FPS Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI Overlay HUD Layer -->
+    <div id="hudLayer">
+
+        <!-- 1. TOP BAR: CONQUEST METER & STATUS -->
+        <div class="top-hud-bar">
+            <!-- Blue Faction Banner -->
+            <div class="faction-banner">
+                <span class="faction-icon">🛡️</span>
+                <div>
+                    <div class="faction-title" style="color: #00e5ff;">ALIANÇA AZUL</div>
+                    <div class="faction-sub" style="font-size: 11px; color: #70d6ff;">Lord Dominator</div>
+                </div>
+            </div>
+
+            <!-- Domination / Ticket Bar -->
+            <div class="conquest-tracker">
+                <div class="conquest-header">
+                    <span style="color: #00e5ff;">DOMINAÇÃO DO MAPA</span>
+                    <span id="dominationScoreText" style="color: #ffd700; font-size: 14px;">0 : 0</span>
+                    <span style="color: #ff2a55;">LEGIÃO CARMESIM</span>
+                </div>
+                <div class="conquest-bar-container">
+                    <div id="playerDomBar" class="bar-player"></div>
+                    <div id="enemyDomBar" class="bar-enemy"></div>
+                </div>
+            </div>
+
+            <!-- Red Faction Banner -->
+            <div class="faction-banner enemy">
+                <div>
+                    <div class="faction-title" style="color: #ff2a55;">LEGIÃO CARMESIM</div>
+                    <div class="faction-sub" style="font-size: 11px; color: #ff758f; text-align: right;">General Malakor</div>
+                </div>
+                <span class="faction-icon">💀</span>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="top-actions interactive">
+                <button id="openMapBtn" class="hud-btn" title="Mudar Campo de Batalha">🌍 Arenas</button>
+                <button id="toggleMinimapBtn" class="hud-btn" title="Alternar Minimapa">🗺️ Radar</button>
+                <button id="openShopBtn" class="hud-btn">🛒 Loja [B]</button>
+                <button id="soundToggleBtn" class="hud-btn">🔊 Som</button>
+                <button id="fullscreenBtn" class="hud-btn" title="Tela Cheia">⛶</button>
+            </div>
+        </div>
+
+        <!-- 2. MINIMAP (TOP RIGHT) -->
+        <div id="minimapWrapper" class="minimap-wrapper">
+            <div class="minimap-header">
+                <span>RADAR TÁTICO</span>
+                <span style="color: #ffd700;">5 PONTOS</span>
+            </div>
+            <canvas id="minimapCanvas" width="220" height="155"></canvas>
+            <div class="controls-hint">
+                [W,A,S,D] Mover • [Botão Esquerdo] Atacar
+            </div>
+        </div>
+
+        <!-- 3. BOTTOM HUD: HERO STATS & DESKTOP SKILL HOTBAR -->
+        <div class="bottom-hud">
+
+            <!-- Hero Profile & Stats -->
+            <div class="hero-profile interactive">
+                <div class="hero-crest">
+                    👑
+                    <div id="playerLevelBadge" class="level-tag">Nvl 1</div>
+                </div>
+
+                <div class="hero-bars">
+                    <!-- HP Bar -->
+                    <div class="stat-bar-wrapper">
+                        <div id="hpBarFill" class="stat-bar-fill hp" style="width: 100%;"></div>
+                        <div id="hpText" class="stat-label">750 / 750</div>
+                    </div>
+
+                    <!-- Mana Bar -->
+                    <div class="stat-bar-wrapper">
+                        <div id="manaBarFill" class="stat-bar-fill mana" style="width: 100%;"></div>
+                        <div id="manaText" class="stat-label">200 / 200</div>
+                    </div>
+
+                    <!-- XP Bar -->
+                    <div class="stat-bar-wrapper" style="height: 6px;">
+                        <div id="xpBarFill" class="stat-bar-fill xp" style="width: 0%;"></div>
+                    </div>
+
+                    <!-- Gold counter -->
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700;">
+                        <span style="color: #94a3b8;">Tesouro:</span>
+                        <span id="playerGoldHUD" style="color: #ffd700;">50 🪙</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desktop Skills Hotbar -->
+            <div id="desktopSkillsHotbar" class="skills-hotbar interactive">
+                <!-- Skill Q -->
+                <div id="btn-q" class="skill-slot" title="Lâmina Giratória (AoE Spin)">
+                    <div class="skill-key-badge">Q</div>
+                    <div class="skill-icon">🌀</div>
+                    <div class="skill-mana-cost">30 MP</div>
+                    <div id="cd-q" class="cooldown-overlay"></div>
+                    <div id="cd-text-q" class="cooldown-text">4.5</div>
+                </div>
+
+                <!-- Skill E -->
+                <div id="btn-e" class="skill-slot" title="Chuva de Meteoros (Explosão no Cursor)">
+                    <div class="skill-key-badge">E</div>
+                    <div class="skill-icon">☄️</div>
+                    <div class="skill-mana-cost">60 MP</div>
+                    <div id="cd-e" class="cooldown-overlay"></div>
+                    <div id="cd-text-e" class="cooldown-text">8.0</div>
+                </div>
+
+                <!-- Skill R -->
+                <div id="btn-r" class="skill-slot" title="Grito de Guerra (Buff Dano + Escudo em Área)">
+                    <div class="skill-key-badge">R</div>
+                    <div class="skill-icon">📯</div>
+                    <div class="skill-mana-cost">50 MP</div>
+                    <div id="cd-r" class="cooldown-overlay"></div>
+                    <div id="cd-text-r" class="cooldown-text">12.0</div>
+                </div>
+
+                <!-- Skill Space -->
+                <div id="btn-space" class="skill-slot" title="Investida Fantasma (Esquiva Veloz)">
+                    <div class="skill-key-badge">ESPAÇO</div>
+                    <div class="skill-icon">⚡</div>
+                    <div class="skill-mana-cost">15 MP</div>
+                    <div id="cd-space" class="cooldown-overlay"></div>
+                    <div id="cd-text-space" class="cooldown-text">2.8</div>
+                </div>
+
+                <!-- Skill F -->
+                <div id="btn-f" class="skill-slot" title="Convocar Tropa (Invoca 3 Cavaleiros Reais)">
+                    <div class="skill-key-badge">F</div>
+                    <div class="skill-icon">🛡️</div>
+                    <div class="skill-mana-cost">70 MP</div>
+                    <div id="cd-f" class="cooldown-overlay"></div>
+                    <div id="cd-text-f" class="cooldown-text">18.0</div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 4. MOBILE VIRTUAL JOYSTICK & TOUCH CONTROLS -->
+    <div id="mobileControls" class="mobile-controls-layer">
+        <!-- Left Virtual Joystick Zone -->
+        <div id="joystickZone" class="joystick-zone">
+            <div id="joystickBase" class="joystick-base">
+                <div id="joystickThumb" class="joystick-thumb"></div>
+            </div>
+        </div>
+
+        <!-- Right Action Cluster: Attack & Skills -->
+        <div class="mobile-action-cluster">
+            <!-- Satellite Skill Buttons -->
+            <button id="m-btn-q" class="m-skill-btn m-btn-q" title="Lâmina Giratória">
+                <span class="m-icon">🌀</span>
+                <span class="m-tag">Q</span>
+                <div id="m-cd-q" class="cooldown-overlay"></div>
+            </button>
+
+            <button id="m-btn-e" class="m-skill-btn m-btn-e" title="Chuva de Meteoros">
+                <span class="m-icon">☄️</span>
+                <span class="m-tag">E</span>
+                <div id="m-cd-e" class="cooldown-overlay"></div>
+            </button>
+
+            <button id="m-btn-r" class="m-skill-btn m-btn-r" title="Grito de Guerra">
+                <span class="m-icon">📯</span>
+                <span class="m-tag">R</span>
+                <div id="m-cd-r" class="cooldown-overlay"></div>
+            </button>
+
+            <button id="m-btn-space" class="m-skill-btn m-btn-dash" title="Investida / Esquiva">
+                <span class="m-icon">⚡</span>
+                <span class="m-tag">DASH</span>
+                <div id="m-cd-space" class="cooldown-overlay"></div>
+            </button>
+
+            <button id="m-btn-f" class="m-skill-btn m-btn-f" title="Convocar Guarda Real">
+                <span class="m-icon">🛡️</span>
+                <span class="m-tag">F</span>
+                <div id="m-cd-f" class="cooldown-overlay"></div>
+            </button>
+
+            <!-- Big Central Attack Button -->
+            <button id="mobileAttackBtn" class="m-attack-btn" title="Atacar">
+                <span style="font-size: 34px;">⚔️</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL: LOJA DE MELHORIAS [B] -->
+    <div id="shopModal" class="modal-backdrop hidden">
+        <div class="modal-panel">
+            <h2 class="modal-title">FORJA & ARSENAL REAL</h2>
+            <p class="modal-desc">Invista seu ouro conquistado nos territórios para aprimorar seus poderes.</p>
+
+            <div style="font-size: 16px; margin-bottom: 16px; color: #ffd700; font-weight: bold;">
+                Seu Ouro Disponível: <span id="shopGoldDisplay">0 🪙</span>
+            </div>
+
+            <div class="shop-grid">
+                <!-- Upgrade 1: Damage -->
+                <div class="shop-item">
+                    <div>
+                        <div class="shop-item-header">
+                            <span class="shop-item-title">⚔️ Lâmina Rúnica</span>
+                            <span id="count-damage" class="shop-item-level">Nvl 0</span>
+                        </div>
+                        <div class="shop-item-desc">+14 de dano de ataque e nas habilidades.</div>
+                    </div>
+                    <button id="buy-damage" class="shop-item-btn">
+                        <span>Aprimorar</span>
+                        <span id="cost-damage">60 🪙</span>
+                    </button>
+                </div>
+
+                <!-- Upgrade 2: Health -->
+                <div class="shop-item">
+                    <div>
+                        <div class="shop-item-header">
+                            <span class="shop-item-title">🛡️ Armadura de Titã</span>
+                            <span id="count-health" class="shop-item-level">Nvl 0</span>
+                        </div>
+                        <div class="shop-item-desc">+120 de Vida Máxima e cura instantânea.</div>
+                    </div>
+                    <button id="buy-health" class="shop-item-btn">
+                        <span>Aprimorar</span>
+                        <span id="cost-health">50 🪙</span>
+                    </button>
+                </div>
+
+                <!-- Upgrade 3: Cooldown -->
+                <div class="shop-item">
+                    <div>
+                        <div class="shop-item-header">
+                            <span class="shop-item-title">🔮 Mente Arcana</span>
+                            <span id="count-cooldown" class="shop-item-level">Nvl 0</span>
+                        </div>
+                        <div class="shop-item-desc">-10% no tempo de recarga de todos os poderes.</div>
+                    </div>
+                    <button id="buy-cooldown" class="shop-item-btn">
+                        <span>Aprimorar</span>
+                        <span id="cost-cooldown">75 🪙</span>
+                    </button>
+                </div>
+
+                <!-- Upgrade 4: Speed -->
+                <div class="shop-item">
+                    <div>
+                        <div class="shop-item-header">
+                            <span class="shop-item-title">👢 Botas de Mercúrio</span>
+                            <span id="count-speed" class="shop-item-level">Nvl 0</span>
+                        </div>
+                        <div class="shop-item-desc">+25 na velocidade de movimento do Herói.</div>
+                    </div>
+                    <button id="buy-speed" class="shop-item-btn">
+                        <span>Aprimorar</span>
+                        <span id="cost-speed">55 🪙</span>
+                    </button>
+                </div>
+            </div>
+
+            <button id="closeShopBtn" class="primary-btn">VOLTAR À BATALHA</button>
+        </div>
+    </div>
+
+    <!-- MODAL: FIM DE JOGO -->
+    <div id="gameOverModal" class="modal-backdrop hidden">
+        <div class="modal-panel">
+            <h2 id="gameOverTitle" class="modal-title">FIM DA GUERRA</h2>
+            <p id="gameOverSubtitle" class="modal-desc"></p>
+            <button id="restartBtn" class="primary-btn">JOGAR NOVAMENTE</button>
+        </div>
+    </div>
+
+    <!-- MODAL: BOAS VINDAS / INSTRUÇÕES -->
+    <div id="welcomeModal" class="modal-backdrop">
+        <div class="modal-panel" style="max-width: 680px; padding: 22px 28px;">
+            <div style="position: relative; width: 100%; height: 180px; margin-bottom: 14px; border-radius: 12px; overflow: hidden; border: 2px solid rgba(255, 215, 0, 0.4); box-shadow: 0 4px 20px rgba(0,0,0,0.6);">
+                <img src="banner.jpg" alt="Dominator RPG Banner" style="width: 100%; height: 100%; object-fit: cover;">
+                <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; background: linear-gradient(transparent, rgba(15, 22, 34, 0.95));"></div>
+            </div>
+            <h2 class="modal-title" style="margin-bottom: 6px;">⚔️ DOMINATOR: CONQUISTA DOS REINOS ⚔️</h2>
+            <p class="modal-desc" style="margin-bottom: 14px;">
+                Comande seu Herói e tropas em uma guerra territorial RPG épica!
+                Capture e proteja os <strong>5 Pontos de Verificação</strong> estratégicos para gerar recursos e dominar o mapa.
+            </p>
+
+            <!-- Map Selector Section -->
+            <div style="margin-bottom: 18px;">
+                <div style="font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: #ffd700; margin-bottom: 8px;">
+                    SELECIONE O CAMPO DE BATALHA (4800 x 3200):
+                </div>
+                <div class="map-select-grid">
+                    <div id="map-opt-valley" class="map-card active" onclick="window.game && window.game.changeMap('valley'); selectMapUI('valley');">
+                        <div class="map-card-icon">🌲</div>
+                        <div class="map-card-name">Vale da Aurora</div>
+                        <div class="map-card-desc">Vales Verdes, Rios & Florestas</div>
+                    </div>
+                    <div id="map-opt-frost" class="map-card" onclick="window.game && window.game.changeMap('frost'); selectMapUI('frost');">
+                        <div class="map-card-icon">❄️</div>
+                        <div class="map-card-name">Picos da Geada</div>
+                        <div class="map-card-desc">Tundra Congelada & Gelo</div>
+                    </div>
+                    <div id="map-opt-volcano" class="map-card" onclick="window.game && window.game.changeMap('volcano'); selectMapUI('volcano');">
+                        <div class="map-card-icon">🌋</div>
+                        <div class="map-card-name">Forja Vulcânica</div>
+                        <div class="map-card-desc">Rios de Magma & Cinzas</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: rgba(20, 30, 45, 0.75); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; text-align: left; font-size: 13.5px; line-height: 1.55;">
+                <div style="color: #00e5ff; font-weight: bold; margin-bottom: 4px;">🎯 OBJETIVO:</div>
+                Entre nos círculos de território para hastear sua bandeira. Cada base dominada invoca tropas e gera pontos de dominação (alcance 1000 pontos para a vitória).<br><br>
+                <div style="color: #ffd700; font-weight: bold; margin-bottom: 4px;">🎮 COMANDOS NO PC:</div>
+                • <strong>W, A, S, D</strong>: Mover • <strong>Botão Esquerdo</strong>: Combo de Espada (3 Golpes)<br>
+                • <strong>Q</strong>: Turbilhão • <strong>E</strong>: Meteoro • <strong>R</strong>: Grito de Guerra • <strong>Espaço</strong>: Dash • <strong>F</strong>: Invocar Tropas • <strong>B</strong>: Loja<br><br>
+                <div style="color: #00e5ff; font-weight: bold; margin-bottom: 4px;">📱 NO CELULAR / TOUCH:</div>
+                • <strong>Joystick Virtual na Esquerda</strong> para correr 360° • <strong>Botão Grande de Espada na Direita</strong> para atacar com mira inteligente automática!
+            </div>
+
+            <button onclick="document.getElementById('welcomeModal').classList.add('hidden'); if(window.game) window.game.sound.init();" class="primary-btn">
+                ENTRAR NA BATALHA
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL: SELETOR DE MAPAS EM JOGO -->
+    <div id="mapModal" class="modal-backdrop hidden">
+        <div class="modal-panel">
+            <h2 class="modal-title">CAMPOS DE BATALHA</h2>
+            <p class="modal-desc">Mude de arena para travar batalhas em diferentes continentes e climas.</p>
+
+            <div class="map-select-grid" style="margin-bottom: 22px;">
+                <div class="map-card" onclick="window.game && window.game.changeMap('valley'); document.getElementById('mapModal').classList.add('hidden');">
+                    <div class="map-card-icon">🌲</div>
+                    <div class="map-card-name">Vale da Aurora</div>
+                    <div class="map-card-desc">Rios, florestas e pontes de pedra.</div>
+                </div>
+                <div class="map-card" onclick="window.game && window.game.changeMap('frost'); document.getElementById('mapModal').classList.add('hidden');">
+                    <div class="map-card-icon">❄️</div>
+                    <div class="map-card-name">Picos da Geada</div>
+                    <div class="map-card-desc">Tundra fria, gelo escorregadio e neve.</div>
+                </div>
+                <div class="map-card" onclick="window.game && window.game.changeMap('volcano'); document.getElementById('mapModal').classList.add('hidden');">
+                    <div class="map-card-icon">🌋</div>
+                    <div class="map-card-name">Forja Vulcânica</div>
+                    <div class="map-card-desc">Magma ardente, rocha negra e cinzas.</div>
+                </div>
+            </div>
+
+            <button onclick="document.getElementById('mapModal').classList.add('hidden');" class="primary-btn">VOLTAR</button>
+        </div>
+    </div>
+
+    <script>
+        function selectMapUI(theme) {
+            ['valley', 'frost', 'volcano'].forEach(t => {
+                const el = document.getElementById(`map-opt-${t}`);
+                if (el) el.classList.toggle('active', t === theme);
+            });
+        }
+    </script>
+
+    <!-- Scripts -->
+    <script src="audio.js"></script>
+    <script src="particles.js"></script>
+    <script src="map.js"></script>
+    <script src="entities.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
